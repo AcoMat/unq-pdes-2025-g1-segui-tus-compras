@@ -51,7 +51,7 @@ public class PurchaseDtoTest {
     void testPurchaseDto_withTooManyItems_shouldFailValidation() {
         PurchaseDto dto = new PurchaseDto();
         List<PurchaseItemDto> items = new ArrayList<>();
-        IntStream.range(0, 101).forEach(i -> items.add(new PurchaseItemDto()));
+        IntStream.range(0, 101).forEach(i -> items.add(new PurchaseItemDto("product" + i, 1)));
         dto.items = items;
 
         Set<ConstraintViolation<PurchaseDto>> violations = validator.validate(dto);
@@ -62,9 +62,7 @@ public class PurchaseDtoTest {
     @Test
     void testPurchaseDto_withValidItems_shouldPassValidation() {
         PurchaseDto dto = new PurchaseDto();
-        PurchaseItemDto item = new PurchaseItemDto();
-        item.productId = "123";
-        item.amount = 1;
+        PurchaseItemDto item = new PurchaseItemDto("123",1);
         dto.items = Collections.singletonList(item);
 
         Set<ConstraintViolation<PurchaseDto>> violations = validator.validate(dto);

@@ -21,11 +21,12 @@ public class Review {
     @Min(1)
     @Max(5)
     private Integer rating;
+    @Column(columnDefinition = "TEXT")
     private String comment;
     private LocalDateTime createdAt;
     @ManyToOne
     private Product product;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     private User user;

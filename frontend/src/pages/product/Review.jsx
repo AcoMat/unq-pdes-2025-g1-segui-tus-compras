@@ -63,6 +63,7 @@ export default function Review() {
                             <span className="text-muted">(opcional)</span>
                             <textarea rows="3" ref={textArea} placeholder="Escribí tu opinión aquí..." className="w-100"></textarea>
                         </div>
+                        <span className="text-muted fs-6 mb-4">Si ya calificaste el producto se reemplazará por esta calificacion</span>
                         <div className="d-flex justify-content-between">
                             <Link to={`/product/${idProduct}`} className="text-primary text-decoration-none ps-1">Cancelar</Link>
                             <div className="w-25">

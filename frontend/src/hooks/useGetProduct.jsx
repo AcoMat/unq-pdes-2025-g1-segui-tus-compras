@@ -7,6 +7,11 @@ export default function useGetProduct(productId) {
 
   const fetchProduct = async () => {
     const product = await getProductById(productId);
+    if(!product) {
+      setProduct(null);
+      setLoading(false);
+      return;
+    }
     const commentaries = await getProductsComments(productId);
     const reviews = await getProductsReviews(productId);
     product.commentaries = commentaries;

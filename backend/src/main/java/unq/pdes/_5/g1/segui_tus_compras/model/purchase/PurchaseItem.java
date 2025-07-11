@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import unq.pdes._5.g1.segui_tus_compras.model.product.Product;
 
 @Entity
@@ -18,8 +19,16 @@ public class PurchaseItem {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+
+    @Setter
+    @ManyToOne
+    @JoinColumn(name = "purchase_id")
+    @JsonIgnore
+    private Purchase purchase;
+
     private Integer amount;
     private Double subTotal;
+
 
     public PurchaseItem(Product product, Integer amount) {
         this.product = product;

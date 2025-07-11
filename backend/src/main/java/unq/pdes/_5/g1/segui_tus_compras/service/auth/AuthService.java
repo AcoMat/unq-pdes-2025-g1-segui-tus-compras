@@ -2,12 +2,12 @@ package unq.pdes._5.g1.segui_tus_compras.service.auth;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import unq.pdes._5.g1.segui_tus_compras.exception.auth.AlreadyExistingUserException;
 import unq.pdes._5.g1.segui_tus_compras.exception.auth.WrongCredentialsException;
-import unq.pdes._5.g1.segui_tus_compras.metrics.auth.AuthMetricsService;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.out.user.BasicUserDto;
 import unq.pdes._5.g1.segui_tus_compras.model.user.User;
-import unq.pdes._5.g1.segui_tus_compras.model.dto.in.auth.AuthResponseDTO;
+import unq.pdes._5.g1.segui_tus_compras.model.dto.out.auth.AuthResponseDTO;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.auth.LoginCredentials;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.auth.RegisterData;
 import unq.pdes._5.g1.segui_tus_compras.repository.UsersRepository;
@@ -19,15 +19,14 @@ public class AuthService {
     private final UsersRepository usersRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final AuthMetricsService authMetricsService;
 
-    public AuthService(UsersRepository usersRepository, JwtTokenProvider jwtTokenProvider, BCryptPasswordEncoder passwordEncoder, AuthMetricsService authMetricsService) {
+    public AuthService(UsersRepository usersRepository, JwtTokenProvider jwtTokenProvider, BCryptPasswordEncoder passwordEncoder) {
         this.usersRepository = usersRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
-        this.authMetricsService = authMetricsService;
     }
 
+    @Transactional
     public AuthResponseDTO register(RegisterData registerData) {
 
         if (usersRepository.existsByEmail(registerData.getEmail())) {
@@ -46,10 +45,10 @@ public class AuthService {
         return new AuthResponseDTO(new BasicUserDto(new_user), jwtTokenProvider.generateToken(new_user.getId()));
     }
 
+    @Transactional
     public AuthResponseDTO login(LoginCredentials credentials){
         User user = usersRepository.findByEmail(credentials.email);
         if (user == null || !passwordEncoder.matches(credentials.password, user.getPassword())) {
-            authMetricsService.incrementFailedLogin();
             throw new WrongCredentialsException("Email or password is incorrect");
         }
         String token;

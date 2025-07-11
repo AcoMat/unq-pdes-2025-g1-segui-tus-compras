@@ -1,6 +1,9 @@
 package unq.pdes._5.g1.segui_tus_compras.service.user;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import unq.pdes._5.g1.segui_tus_compras.model.product.Product;
+import unq.pdes._5.g1.segui_tus_compras.model.user.User;
 import unq.pdes._5.g1.segui_tus_compras.service.product.ProductService;
 
 @Service
@@ -14,13 +17,16 @@ public class FavoriteService {
         this.productService = productService;
     }
 
+    @Transactional
     public boolean toggleFavorite(Long userId, String productId) {
-        var user = userService.getUserById(userId);
-        var product = productService.getProductById(productId);
+        User user = userService.getUserById(userId);
+        Product product = productService.getProductById(productId);
 
-        boolean added = user.toggleFavorite(product);
+        user.toggleFavorite(product);
+        product.toggleFavoritedBy(user);
+
         userService.updateUser(user);
-        return added;
+        return user.getFavorites().contains(product);
     }
 
 }

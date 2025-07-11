@@ -17,14 +17,12 @@ spring:
       mode: never
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: test-secret
 
 mercadolibre:
   api:
-    client.id: ${MERCADOLIBRE_CLIENT_ID}
-    client.secret: ${MERCADOLIBRE_CLIENT_SECRET}
-    most.recent.token: ${MERCADOLIBRE_API_MOST_RECENT_TOKEN}
-
+    most.recent.token: test-token
+    
 # Logging configuration for tests - override the debug level from main config
 logging:
   level:

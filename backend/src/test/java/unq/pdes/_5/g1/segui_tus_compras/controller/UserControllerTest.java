@@ -16,6 +16,7 @@ import unq.pdes._5.g1.segui_tus_compras.model.purchase.Purchase;
 import unq.pdes._5.g1.segui_tus_compras.model.purchase.PurchaseItem;
 import unq.pdes._5.g1.segui_tus_compras.model.user.User;
 import unq.pdes._5.g1.segui_tus_compras.repository.ProductsRepository;
+import unq.pdes._5.g1.segui_tus_compras.repository.PurchaseRepository;
 import unq.pdes._5.g1.segui_tus_compras.repository.UsersRepository;
 import unq.pdes._5.g1.segui_tus_compras.security.JwtTokenProvider;
 
@@ -35,6 +36,8 @@ class UserControllerTest {
     private UsersRepository usersRepository;
     @Autowired
     private ProductsRepository productsRepository;
+    @Autowired
+    private PurchaseRepository purchaseRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
     @Autowired
@@ -241,13 +244,13 @@ class UserControllerTest {
     void shouldReturnTrueWhenUserBoughtProduct() throws Exception {
         // Arrange
         User testUser = new User("Jane", "Doe", "test@email.com", passwordEncoder.encode("password123"));
+        usersRepository.save(testUser);
         ExternalProductDto externalProduct = new ExternalProductDto();
         externalProduct.id = "1L";
         externalProduct.name = "Test Product";
         Product product = new Product(externalProduct);
         productsRepository.save(product);
-        testUser.addPurchase(new Purchase(testUser, List.of(new PurchaseItem(product,1))));
-        usersRepository.save(testUser);
+        purchaseRepository.save(new Purchase(testUser, List.of(new PurchaseItem(product,1))));
 
         String token = jwtTokenProvider.generateToken(testUser.getId());
 

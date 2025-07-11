@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.meli_api.ExternalProductDto;
 import unq.pdes._5.g1.segui_tus_compras.model.user.User;
 
@@ -12,6 +13,7 @@ import java.util.List;
 
 @Entity
 @Getter
+@NoArgsConstructor
 public class Product {
     @Id
     String id;
@@ -21,46 +23,41 @@ public class Product {
     @Column(columnDefinition = "TEXT")
     String description;
     @ElementCollection(fetch = FetchType.EAGER)
-    @Column
-    List<String> pictures;
+    @CollectionTable(name = "product_pictures", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "url")
+    List<String> pictures = new ArrayList<>();
     Integer priceDiscountPercentage;
     Boolean isFreeShipping;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "product_id")
-    private List<ProductAttribute> attributes;
+    @ElementCollection
+    @CollectionTable(name = "product_attributes", joinColumns = @JoinColumn(name = "product_id"))
+    private List<ProductAttribute> attributes = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Commentary> commentaries;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<Question> questions = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Review> reviews;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<Review> reviews = new ArrayList<>();
 
     @JsonIgnore
     @ManyToMany(mappedBy = "favorites")
-    private List<User> favoritedBy;
+    private List<User> favoritedBy = new ArrayList<>();
 
-    public Product() {
-        this.commentaries = new ArrayList<>();
-        this.reviews = new ArrayList<>();
-        this.favoritedBy = new ArrayList<>();
-    }
 
     public Product(ExternalProductDto apiProduct) {
         this.id = apiProduct.id;
         this.name = apiProduct.name;
         this.description = apiProduct.description != null ? apiProduct.description.content : null;
         this.attributes = apiProduct.attributes != null ? apiProduct.attributes.stream()
-                .map(attribute -> new ProductAttribute(attribute.id, attribute.name, attribute.value))
+                .map(attribute -> new ProductAttribute(attribute.name, attribute.value))
                 .toList() : null;
         this.pictures = apiProduct.pictures != null ? apiProduct.pictures.stream()
                 .map(picture -> picture.url)
                 .toList() : null;
 
         if(apiProduct.buyBoxWinner != null) {
-            // Handle null originalPrice
             this.price = apiProduct.buyBoxWinner.originalPrice;
 
             // Calculate discount only if both price and originalPrice are not null
@@ -77,9 +74,14 @@ public class Product {
             this.isFreeShipping = apiProduct.buyBoxWinner.shipping != null ?
                     apiProduct.buyBoxWinner.shipping.freeShipping : null;
         }
-
-        this.commentaries = new ArrayList<>();
+        this.questions = new ArrayList<>();
         this.reviews = new ArrayList<>();
+    }
+
+    public Product(String id, String name, Double price) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
     }
 
     public Double getPriceWithDiscountApplied() {
@@ -92,12 +94,13 @@ public class Product {
         return price;
     }
 
-    public void addComment(Commentary newComment) {
-        this.commentaries.add(newComment);
-    }
-
-    public void addReview(Review newReview) {
-        this.reviews.removeIf(review -> review.getUser().equals(newReview.getUser()));
-        this.reviews.add(newReview);
+    public void toggleFavoritedBy(User user) {
+        boolean exists = this.favoritedBy.stream()
+                .anyMatch(u -> u.getId().equals(user.getId()));
+        if (exists) {
+            this.favoritedBy.removeIf(u -> u.getId().equals(user.getId()));
+        } else {
+            this.favoritedBy.add(user);
+        }
     }
 }

@@ -1,9 +1,10 @@
-Cypress.Commands.add('login', (email = 'aaa@bbb.com', password = 'password') => {
+Cypress.Commands.add('loginAdmin', () => {
+  cy.intercept('POST', '/auth/login').as('loginRequest');
   cy.visit('/login');
-  // Write the email
-  cy.get('input').first().type(email); 
+  // Paso 1: Email
+  cy.get('input[name="email"]').type("admin@email.com");
   cy.contains('Continuar').click();
-  cy.get('input[type="password"]').type(password);
+  cy.get('input[name="password"]').type('admin123');
   cy.contains('Iniciar sesión').click();
-  cy.url().should('include', '/'); 
+  cy.wait('@loginRequest').its('response.statusCode').should('eq', 200);
 });

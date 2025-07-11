@@ -101,13 +101,13 @@ function LoginForm() {
                   }</label>
                 {loginStage === loginStages.email ?
                   <>
-                    <input className='w-100' value={email} onChange={(e) => { setEmail(e.target.value); setFormError(false) }} />
+                    <input name='email' className='w-100' value={email} onChange={(e) => { setEmail(e.target.value); setFormError(false) }} />
                     {formError && <label className='error'>{formError}</label>}
                   </>
                   :
                   loginStage === loginStages.password ?
                     <>
-                      <input className='w-100' type='password' value={password} onChange={(e) => { setPassword(e.target.value); setFormError(null) }} />
+                      <input name='password' className='w-100' type='password' value={password} onChange={(e) => { setPassword(e.target.value); setFormError(null) }} />
                       {formError && <label className='error'>{formError}</label>}
                     </>
                     :

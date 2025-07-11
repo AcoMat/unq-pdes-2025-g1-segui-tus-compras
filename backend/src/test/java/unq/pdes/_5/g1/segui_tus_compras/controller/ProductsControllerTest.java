@@ -1,5 +1,6 @@
 package unq.pdes._5.g1.segui_tus_compras.controller;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -10,32 +11,29 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.transaction.annotation.Transactional;
 import unq.pdes._5.g1.segui_tus_compras.exception.product.ProductNotFoundException;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.meli_api.ApiSearchDto;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.meli_api.ExternalProductDto;
-import unq.pdes._5.g1.segui_tus_compras.model.product.Commentary;
+import unq.pdes._5.g1.segui_tus_compras.model.product.Question;
 import unq.pdes._5.g1.segui_tus_compras.model.product.Product;
 import unq.pdes._5.g1.segui_tus_compras.model.product.Review;
 import unq.pdes._5.g1.segui_tus_compras.model.purchase.Purchase;
 import unq.pdes._5.g1.segui_tus_compras.model.purchase.PurchaseItem;
 import unq.pdes._5.g1.segui_tus_compras.model.user.User;
-import unq.pdes._5.g1.segui_tus_compras.repository.ProductsRepository;
-import unq.pdes._5.g1.segui_tus_compras.repository.UsersRepository;
+import unq.pdes._5.g1.segui_tus_compras.repository.*;
 import unq.pdes._5.g1.segui_tus_compras.security.JwtTokenProvider;
 import unq.pdes._5.g1.segui_tus_compras.service.external.MeLiApiService;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class ProductsControllerTest {
 
     @Autowired
@@ -43,105 +41,110 @@ class ProductsControllerTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
-    @MockitoBean
+    @Autowired
     private ProductsRepository productsRepository;
-    @MockitoBean
+    @Autowired
     private UsersRepository usersRepository;
+    @Autowired
+    private PurchaseRepository purchaseRepository;
+    @Autowired
+    private PurchaseItemRepository purchaseItemRepository;
+    @Autowired
+    private QuestionsRepository questionsRepository;
+    @Autowired
+    private ReviewsRepository reviewsRepository;
     @MockitoBean
     private MeLiApiService meLiApiService;
 
+    @AfterEach
+    void setUp() {
+        questionsRepository.deleteAll();
+        reviewsRepository.deleteAll();
+        purchaseItemRepository.deleteAll();
+        purchaseRepository.deleteAll();
+        productsRepository.deleteAll();
+        usersRepository.deleteAll();
+    }
 
     @Test
     void testGetProductById() throws Exception {
-        ExternalProductDto mockedProduct = createMockExternalProductDto();
-        // Mock that repository does not contain the product (returns empty)
-        when(productsRepository.findById(mockedProduct.getId())).thenReturn(Optional.empty());
+        // Create a mock ExternalProductDto
+        ExternalProductDto mockExternalProductDto = new ExternalProductDto();
+        mockExternalProductDto.id = "MLA123456789";
+        mockExternalProductDto.name = "Test Product";
+        mockExternalProductDto.description = new ExternalProductDto.ShortDescriptionDto();
+        mockExternalProductDto.description.content = "This is a test product description";
+        mockExternalProductDto.buyBoxWinner = new ExternalProductDto.BuyBoxWinnerDto();
+        mockExternalProductDto.buyBoxWinner.originalPrice = 100.0;
+        mockExternalProductDto.buyBoxWinner.shipping = new ExternalProductDto.BuyBoxWinnerDto.ShippingDto();
+        mockExternalProductDto.buyBoxWinner.shipping.freeShipping = true;
         // Mock MeLiApiService to return mock product data
-        when(meLiApiService.getProductById(mockedProduct.getId())).thenReturn(mockedProduct);
+        when(meLiApiService.getProductById(mockExternalProductDto.id)).thenReturn(mockExternalProductDto);
 
-        // Mock that repository saves the product and returns it
-        when(productsRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.<Product>getArgument(0));
-
-        // Perform request and validate response
-        mockMvc.perform(MockMvcRequestBuilders.get("/products/" + mockedProduct.getId())
+        mockMvc.perform(MockMvcRequestBuilders.get("/products/" + mockExternalProductDto.getId())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(mockedProduct.getId()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(mockExternalProductDto.getId()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Test Product"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.description").value("This is a test product description"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.price").value(100.0))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.isFreeShipping").value(true));
-
-        // Verify that the repository was called to save the product
-        verify(productsRepository).save(any(Product.class));
     }
 
     @Test
     void testGetNonExistentProductById() throws Exception {
         String NON_EXISTENT_PRODUCT_ID = "MLA999999999";
-        // Mock repository to return empty (not found)
-        when(productsRepository.findById(NON_EXISTENT_PRODUCT_ID)).thenReturn(Optional.empty());
-
         // Mock MeLiApiService to throw ProductNotFoundException when the product is not found
         when(meLiApiService.getProductById(NON_EXISTENT_PRODUCT_ID)).thenThrow(new ProductNotFoundException(NON_EXISTENT_PRODUCT_ID));
 
-        // Perform request and validate response
         mockMvc.perform(MockMvcRequestBuilders.get("/products/" + NON_EXISTENT_PRODUCT_ID)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
-    void testGetCommentsFromProduct() throws Exception {
-        Product mockedProduct = new Product(createMockExternalProductDto());
+    void testGetQuestionsFromProduct() throws Exception {
+        Product product = new Product("MLA123456789", "Test Product", 100.0);
+        productsRepository.save(product);
         User user = new User("John","Doe","john@email.com","securePass");
-        mockedProduct.addComment(new Commentary(user, mockedProduct, "Great product!"));
-        when(productsRepository.findById(mockedProduct.getId())).thenReturn(Optional.of(mockedProduct));
+        usersRepository.save(user);
+        Question question = new Question(user, product, "Great product!");
+        questionsRepository.save(question);
 
-        // Perform request and validate response
-        mockMvc.perform(MockMvcRequestBuilders.get("/products/" + mockedProduct.getId() + "/comments")
+        mockMvc.perform(MockMvcRequestBuilders.get("/products/" + product.getId() + "/comments")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].comment").value("Great product!"));
     }
 
-
     @Test
-    void testPostCommentToProduct() throws Exception {
-        String testComment = "This is a test comment";
-        Product product = new Product(createMockExternalProductDto());
+    void testPostQuestionToProduct() throws Exception {
+        Product product = new Product("MLA123456789", "Test Product", 100.0);
+        productsRepository.save(product);
 
         String userToken = "testUserToken";
-        Long userId = 1L;
         User user = new User("John","Doe","john@email.com","securePass");
+        usersRepository.save(user);
 
+        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(user.getId());
 
-        when(usersRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(productsRepository.findById(product.getId())).thenReturn(Optional.of(product));
-        when(productsRepository.existsById(product.getId())).thenReturn(true);
-        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(userId);
-
-        // Perform request to add comment with Authorization header
+        String testQuestion = "This is a test question";
         mockMvc.perform(MockMvcRequestBuilders.post("/products/" + product.getId() + "/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", userToken)
-                        .content("{\"comment\":\"" + testComment + "\"}"))
+                        .content("{\"comment\":\"" + testQuestion + "\"}"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string("Comment added successfully"));
-
-        // Verify that the repository was called to save the product
-        verify(productsRepository).save(any(Product.class));
     }
 
     @Test
     void testGetReviewsFromProduct() throws Exception {
-        Product product = new Product(createMockExternalProductDto());
+        Product product = new Product("MLA123456789", "Test Product", 100.0);
+        productsRepository.save(product);
         User user = new User("John","Doe","john@email.com","securePass");
-        product.addReview(new Review(product, user, 5, "Excellent quality!"));
+        usersRepository.save(user);
+        reviewsRepository.save(new Review(product, user, 5, "Excellent quality!"));
 
-        when(productsRepository.findById(product.getId())).thenReturn(Optional.of(product));
-
-        // Perform request and validate response
         mockMvc.perform(MockMvcRequestBuilders.get("/products/" + product.getId() + "/reviews")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk())
@@ -151,22 +154,19 @@ class ProductsControllerTest {
 
     @Test
     void testPostReviewToProduct() throws Exception {
-        Product product = new Product(createMockExternalProductDto());
+        Product product = new Product("MLA123456789", "Test Product", 100.0);
+        productsRepository.save(product);
 
         String userToken = "testUserToken";
-        Long userId = 1L;
         User user = new User("John","Doe","john@email.com","securePass");
+        usersRepository.save(user);
 
-        // Create purchase with one item using the product
         PurchaseItem purchaseItem = new PurchaseItem(product, 1);
         List<PurchaseItem> purchaseItems = List.of(purchaseItem);
         Purchase purchase = new Purchase(user, purchaseItems);
-        user.addPurchase(purchase);
+        purchaseRepository.save(purchase);
 
-        when(usersRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(productsRepository.findById(product.getId())).thenReturn(Optional.of(product));
-        when(productsRepository.existsById(product.getId())).thenReturn(true);
-        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(userId);
+        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(user.getId());
 
         mockMvc.perform(MockMvcRequestBuilders.post("/products/" + product.getId() + "/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,29 +174,23 @@ class ProductsControllerTest {
                         .content("{\"review\": \"test\", \"rating\": 5}"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string("Review added successfully"));
-
-        // Verify that the repository was called to save the product
-        verify(productsRepository).save(any(Product.class));
     }
 
     @Test
     void testPostMultipleReviewsToProduct() throws Exception {
-        Product product = new Product(createMockExternalProductDto());
+        Product product = new Product("MLA123456789", "Test Product", 100.0);
+        productsRepository.save(product);
 
         String userToken = "testUserToken";
-        Long userId = 1L;
-        User user = new User("John","Doe","john@email.com","securePass");
+        User user = new User("John", "Doe", "john@email.com", "securePass");
+        usersRepository.save(user);
 
-        // Create purchase with one item using the produc
         PurchaseItem purchaseItem = new PurchaseItem(product, 1);
         List<PurchaseItem> purchaseItems = List.of(purchaseItem);
         Purchase purchase = new Purchase(user, purchaseItems);
-        user.addPurchase(purchase);
+        purchaseRepository.save(purchase);
 
-        when(usersRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(productsRepository.findById(product.getId())).thenReturn(Optional.of(product));
-        when(productsRepository.existsById(product.getId())).thenReturn(true);
-        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(userId);
+        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(user.getId());
 
         mockMvc.perform(MockMvcRequestBuilders.post("/products/" + product.getId() + "/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -205,73 +199,60 @@ class ProductsControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string("Review added successfully"));
 
-        // Verify that the repository was called to save the product
-        verify(productsRepository).save(any(Product.class));
-
-        // Perform another request to add a different review
         mockMvc.perform(MockMvcRequestBuilders.post("/products/" + product.getId() + "/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", userToken)
                         .content("{\"review\": \"another test\", \"rating\": 4}"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string("Review added successfully"));
-        // Verify that the repository was called to save the product again
-        verify(productsRepository, times(2)).save(any(Product.class));
-        // Verify that the product has only the last review added
-        List<Review> reviews = product.getReviews();
+
+        List<Review> reviews = reviewsRepository.findByProductId(product.getId());
         assert reviews.size() == 1 : "Product should have only the last review made by the user";
     }
 
     @Test
     void testPostReviewToProductWithoutPurchase() throws Exception {
-        Product product = new Product(createMockExternalProductDto());
+        Product product = new Product("MLA123456789", "Test Product", 100.0);
+        productsRepository.save(product);
 
         String userToken = "testUserToken";
-        Long userId = 1L;
         User user = new User("John","Doe","john@email.com","securePass");
+        usersRepository.save(user);
 
-        when(usersRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(productsRepository.findById(product.getId())).thenReturn(Optional.of(product));
-        when(productsRepository.existsById(product.getId())).thenReturn(true);
-        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(userId);
+        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(user.getId());
 
-        // Perform request to add comment with Authorization header
         mockMvc.perform(MockMvcRequestBuilders.post("/products/" + product.getId() + "/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", userToken)
                         .content("{\"review\": \"test\", \"rating\": 5}"))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.content().string("You need to buy the product before reviewing it"));
-
-        // Verify that the repository was not called to save the product
-        verify(productsRepository, never()).save(any(Product.class));
     }
 
     @Test
     void testMultipleUsersReviewingSameProduct() throws Exception {
-        Product product = new Product(createMockExternalProductDto());
-        when(productsRepository.findById(product.getId())).thenReturn(Optional.of(product));
-        when(productsRepository.existsById(product.getId())).thenReturn(true);
+        Product product = new Product("MLA123456789", "Test Product", 100.0);
+        productsRepository.save(product);
 
         String userToken = "testUserToken";
-        Long userId = 1L;
-        User user = new User("John","Doe","john@email.com","securePass");
-        when(usersRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(userId);
+        User user = new User("John", "Doe", "john@email.com", "securePass");
+        usersRepository.save(user);
+        when(jwtTokenProvider.validateTokenAndGetUserId(userToken)).thenReturn(user.getId());
 
         String userToken2 = "testUserToken2";
-        Long userId2 = 2L;
-        User user2 = new User("Jesse","Doe","jesse@email.com","securePass2");
-        when(usersRepository.findById(userId2)).thenReturn(Optional.of(user2));
-        when(jwtTokenProvider.validateTokenAndGetUserId(userToken2)).thenReturn(userId2);
+        User user2 = new User("John", "Doe", "john2@email.com", "securePass");
+        usersRepository.save(user2);
+        when(jwtTokenProvider.validateTokenAndGetUserId(userToken2)).thenReturn(user2.getId());
 
-        // Create purchase with one item using the produc
-        PurchaseItem purchaseItem = new PurchaseItem(product, 1);
-        List<PurchaseItem> purchaseItems = List.of(purchaseItem);
-        Purchase purchase = new Purchase(user, purchaseItems);
+        PurchaseItem purchaseItem1 = new PurchaseItem(product, 1);
+        List<PurchaseItem> purchaseItems1 = List.of(purchaseItem1);
+        Purchase purchase1 = new Purchase(user, purchaseItems1);
+        purchaseRepository.save(purchase1);
 
-        user.addPurchase(purchase);
-        user2.addPurchase(purchase);
+        PurchaseItem purchaseItem2 = new PurchaseItem(product, 1); // NUEVO OBJETO
+        List<PurchaseItem> purchaseItems2 = List.of(purchaseItem2);
+        Purchase purchase2 = new Purchase(user2, purchaseItems2);
+        purchaseRepository.save(purchase2);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/products/" + product.getId() + "/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -280,7 +261,6 @@ class ProductsControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string("Review added successfully"));
 
-        // Perform another request to add a different review
         mockMvc.perform(MockMvcRequestBuilders.post("/products/" + product.getId() + "/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", userToken2)
@@ -288,10 +268,7 @@ class ProductsControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string("Review added successfully"));
 
-        // Verify that the repository was called to save the product
-        verify(productsRepository, times(2)).save(any(Product.class));
-        // Verify that the product has both reviews added
-        List<Review> reviews = product.getReviews();
+        List<Review> reviews = reviewsRepository.findByProductId(product.getId());
         assert reviews.size() == 2 : "Product should have both reviews made by different users";
     }
 
@@ -299,12 +276,13 @@ class ProductsControllerTest {
     void testSearchProductsByName() throws Exception {
         String searchQuery = "Products";
 
-        // Products
-        Product product1 = new Product(createMockExternalProductDto());
-        Product product2 = new Product(createMockExternalProductDto());
-        Product product3 = new Product(createMockExternalProductDto());
+        Product product1 = new Product("Product 1", "Description of Product 1", 100.0);
+        productsRepository.save(product1);
+        Product product2 = new Product("Product 2", "Description of Product 2", 200.0);
+        productsRepository.save(product2);
+        Product product3 = new Product("Product 3", "Description of Product 3", 300.0);
+        productsRepository.save(product3);
 
-        // Arrange: Mock the MeLiApiService to return a mock ApiSearchDto
         ApiSearchDto mockApiSearchDto = new ApiSearchDto();
         ApiSearchDto.SearchResultDto mockSearchResultDto1 = new ApiSearchDto.SearchResultDto();
         mockSearchResultDto1.id = product1.getId();
@@ -315,25 +293,17 @@ class ProductsControllerTest {
         mockApiSearchDto.results = List.of(mockSearchResultDto1, mockSearchResultDto2, mockSearchResultDto3);
         mockApiSearchDto.keywords = searchQuery;
         ApiSearchDto.PagingDto mockPagingDto = new ApiSearchDto.PagingDto();
-        mockPagingDto.total = 4; // Mock total results
+        mockPagingDto.total = 4;
         mockPagingDto.offset = 0;
         mockPagingDto.limit = 10;
         mockApiSearchDto.paging = mockPagingDto;
 
-        // Mock the MeLiApiService to return the mock ApiSearchDto when search is called
         when(meLiApiService.search(searchQuery,0,10)).thenReturn(mockApiSearchDto);
 
-        // Mock the ProductsRepository to return Product objects for each search result
-        when(productsRepository.findById(product1.getId())).thenReturn(Optional.of(product1));
-        when(productsRepository.findById(product2.getId())).thenReturn(Optional.of(product2));
-        when(productsRepository.findById(product3.getId())).thenReturn(Optional.of(product3));
-
-        // Perform the search request
         mockMvc.perform(MockMvcRequestBuilders.get("/products/search")
                         .param("q", searchQuery)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                // Validate that the results contain the expected products
                 .andExpect(MockMvcResultMatchers.jsonPath("$.query").value(searchQuery))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.results", hasSize(3)))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.results[0].id").value(product1.getId()))
@@ -342,54 +312,6 @@ class ProductsControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.paging.total").value(3))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.paging.offset").value(0))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.paging.limit").value(10));
-        // Verify that the MeLiApiService was called with the correct parameters
         verify(meLiApiService).search(searchQuery, 0, 10);
-    }
-
-
-    private ExternalProductDto createMockExternalProductDto() {
-        String testProduct = "MLA" + new Random().ints(9, 'A', 'Z' + 1)
-                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                .toString();
-        ExternalProductDto productDto = new ExternalProductDto();
-        productDto.id = testProduct;
-        productDto.name = "Test Product";
-
-        // Set description
-        ExternalProductDto.ShortDescriptionDto descriptionDto = new ExternalProductDto.ShortDescriptionDto();
-        descriptionDto.content = "This is a test product description";
-        productDto.description = descriptionDto;
-
-        // Set attributes
-        List<ExternalProductDto.AttributeDto> attributes = new ArrayList<>();
-        ExternalProductDto.AttributeDto attr = new ExternalProductDto.AttributeDto();
-        attr.id = "BRAND";
-        attr.name = "Brand";
-        attr.value = "Test Brand";
-        attributes.add(attr);
-        productDto.attributes = attributes;
-
-        // Set pictures
-        List<ExternalProductDto.PictureDto> pictures = new ArrayList<>();
-        ExternalProductDto.PictureDto pic = new ExternalProductDto.PictureDto();
-        pic.url = "http://example.com/image.jpg";
-        pictures.add(pic);
-        productDto.pictures = pictures;
-
-        // Set buy box winner
-        ExternalProductDto.BuyBoxWinnerDto buyBoxWinner = new ExternalProductDto.BuyBoxWinnerDto();
-        buyBoxWinner.categoryId = "MLA1234";
-        buyBoxWinner.sellerId = 12345L;
-        buyBoxWinner.price = 80.0;
-        buyBoxWinner.originalPrice = 100.0;
-
-        // Set shipping
-        ExternalProductDto.BuyBoxWinnerDto.ShippingDto shipping = new ExternalProductDto.BuyBoxWinnerDto.ShippingDto();
-        shipping.freeShipping = true;
-        buyBoxWinner.shipping = shipping;
-
-        productDto.buyBoxWinner = buyBoxWinner;
-
-        return productDto;
     }
 }

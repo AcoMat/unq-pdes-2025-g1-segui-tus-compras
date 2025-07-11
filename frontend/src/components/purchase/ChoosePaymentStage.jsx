@@ -1,6 +1,7 @@
-import BlueButton from "../../../components/basic/BlueButton/BlueButton";
-import creditCardImage from "../../../assets/checkout/credit-card.svg";
-import debitCardImage from "../../../assets/checkout/debit-card.svg";
+
+import creditCardImage from "../../assets/checkout/credit-card.svg";
+import debitCardImage from "../../assets/checkout/debit-card.svg";
+import LargeBlueButton from "../basic/LargeBlueButton/LargeBlueButton";
 
 export default function ChoosePaymentStage({ nextStage }) {
 
@@ -20,7 +21,7 @@ export default function ChoosePaymentStage({ nextStage }) {
                 </div>
             </div>
             <div className="my-4 d-flex justify-content-end mb-4">
-                <BlueButton text="Continuar" onClick={nextStage} />
+                <LargeBlueButton text="Continuar" onClick={nextStage} />
             </div>
         </>
     )

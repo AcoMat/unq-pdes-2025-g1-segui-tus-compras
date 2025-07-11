@@ -10,9 +10,9 @@ function Login() {
 
     useEffect(()=> {
         if(user) {
-            navigate('/');
+            navigate('/profile');
         }
-    },[])
+    },[user])
 
     return (
         <LoginForm/>

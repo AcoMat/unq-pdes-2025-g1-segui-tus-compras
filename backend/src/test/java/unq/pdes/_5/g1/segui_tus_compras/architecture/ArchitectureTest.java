@@ -33,7 +33,8 @@ public class ArchitectureTest {
                         String name = input.getSimpleName();
                         return name.equals("ProductService") ||
                                 name.equals("ProductInternalService") ||
-                                name.equals("MeLiApiService");
+                                name.equals("MeLiApiService") ||
+                                name.equals("SearchService");
                     }
                 };
 

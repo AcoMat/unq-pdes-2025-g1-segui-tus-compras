@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import unq.pdes._5.g1.segui_tus_compras.model.user.User;
 
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 @Entity
@@ -32,6 +31,8 @@ public class Purchase {
     public Purchase(User user, List<PurchaseItem> items) {
         this.user = user;
         this.date = LocalDateTime.now();
+        // Set items purchase to this purchase
+        items.forEach(item -> item.setPurchase(this));
         this.items = items;
         this.total = items.stream()
                 .map(PurchaseItem::getSubTotal)

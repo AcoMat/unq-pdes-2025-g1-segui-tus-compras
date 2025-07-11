@@ -9,9 +9,9 @@ function Register() {
 
     useEffect(() => {
         if(user){
-            navigate('/user');
+            navigate('/profile');
         }
-    }, []);
+    }, [user]);
 
     return (
         <RegisterForm/>

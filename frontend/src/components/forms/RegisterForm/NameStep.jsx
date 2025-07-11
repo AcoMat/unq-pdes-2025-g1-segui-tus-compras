@@ -7,10 +7,8 @@ export default function NameStep({ setFormData, nextStage }) {
     const [error, setError] = useState(null);
 
     const validateForm = () => {
-        if (nameRef.current.value.trim() === '') {
-            setError("Por favor, ingrese un nombre");
-        } if (lastNameRef.current.value.trim() === '') {
-            setError("Por favor, ingrese un apellido");
+        if (nameRef.current.value.trim() === '' || lastNameRef.current.value.trim() === '') {
+            setError("Por favor, ingrese un nombre y apellido");
         } else {
             setFormData((prevData) => ({
                 ...prevData,

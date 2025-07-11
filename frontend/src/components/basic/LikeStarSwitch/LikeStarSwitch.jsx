@@ -14,11 +14,12 @@ function LikeStarSwitch({ productId }) {
 
     useEffect(() => {
         favorites?.find(likedProduct => likedProduct.id === productId) ? setLiked(true) : setLiked(false)
-    }, [favorites])
+    }, [favorites, liked])
 
     const handleLike = (e) => {
-        e.stopPropagation(); // Prevent event bubbling to parent elements
+        e.stopPropagation()
         if (user) {
+            setLiked(!liked);
             toggleFavoriteProduct(productId);
         } else {
             navigate('/login')
@@ -26,7 +27,10 @@ function LikeStarSwitch({ productId }) {
     }
 
     return (
-        <div className='like-button bg-body border rounded-circle position-absolute top-0 end-0 lh-1 text-center p-2 m-2' onClick={handleLike}>
+        <div
+            className={`like-button bg-body border rounded-circle position-absolute top-0 end-0 lh-1 text-center p-2 m-2 ${liked ? "liked" : "not-liked"}`}
+            onClick={handleLike}
+        >
             <img
                 src={liked ? starFilledIcon : starIcon}
                 className=''

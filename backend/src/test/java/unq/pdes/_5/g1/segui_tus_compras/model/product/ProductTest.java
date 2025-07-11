@@ -2,7 +2,6 @@ package unq.pdes._5.g1.segui_tus_compras.model.product;
 
 import org.junit.jupiter.api.Test;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.meli_api.ExternalProductDto;
-import unq.pdes._5.g1.segui_tus_compras.model.user.User;
 
 import java.util.List;
 
@@ -26,7 +25,6 @@ class ProductTest {
 
         // Set attributes
         ExternalProductDto.AttributeDto attributeDto = new ExternalProductDto.AttributeDto();
-        attributeDto.id = "BRAND";
         attributeDto.name = "Brand";
         attributeDto.value = "Test Brand";
         dto.attributes = List.of(attributeDto);
@@ -52,24 +50,15 @@ class ProductTest {
     }
 
     /**
-     * Helper method to create a test user
-     */
-    private User createTestUser(String firstName, String lastName) {
-        // Using empty email and password for simplicity
-        return new User(firstName,lastName, "", "");
-    }
-
-    /**
      * Helper method to create a Product instance with custom values using the full constructor
      */
-    private Product createTestProduct(String id, Double price, Integer discountPercentage) {
+    private Product createTestProduct(Integer discountPercentage) {
         // Since Product doesn't have setters, we need to use reflection to set values for testing
         ExternalProductDto dto = createSampleExternalProductDto();
-        dto.id = id;
-        dto.buyBoxWinner.originalPrice = price;
+        dto.id = "TEST-123";
+        dto.buyBoxWinner.originalPrice = 100.0;
         if (discountPercentage != null) {
-            double discountedPrice = price * (1 - discountPercentage / 100.0);
-            dto.buyBoxWinner.price = discountedPrice;
+            dto.buyBoxWinner.price = 100.0 * (1 - discountPercentage / 100.0);
         }
         return new Product(dto);
     }
@@ -80,8 +69,8 @@ class ProductTest {
         Product product = new Product();
 
         // Assert
-        assertNotNull(product.getCommentaries());
-        assertTrue(product.getCommentaries().isEmpty());
+        assertNotNull(product.getQuestions());
+        assertTrue(product.getQuestions().isEmpty());
 
         assertNotNull(product.getReviews());
         assertTrue(product.getReviews().isEmpty());
@@ -106,7 +95,6 @@ class ProductTest {
         // Check attributes
         assertNotNull(product.getAttributes());
         assertEquals(1, product.getAttributes().size());
-        assertEquals("BRAND", product.getAttributes().getFirst().getId());
         assertEquals("Brand", product.getAttributes().getFirst().getName());
         assertEquals("Test Brand", product.getAttributes().getFirst().getValue());
 
@@ -122,9 +110,9 @@ class ProductTest {
         // Check free shipping
         assertTrue(product.getIsFreeShipping());
 
-        // Check commentaries initialization
-        assertNotNull(product.getCommentaries());
-        assertTrue(product.getCommentaries().isEmpty());
+        // Check questions initialization
+        assertNotNull(product.getQuestions());
+        assertTrue(product.getQuestions().isEmpty());
     }
 
     @Test
@@ -155,7 +143,7 @@ class ProductTest {
     @Test
     void getPriceWithDiscountApplied_WithDiscount_ShouldReturnDiscountedPrice() {
         // Arrange
-        Product product = createTestProduct("TEST-123", 100.0, 20);
+        Product product = createTestProduct(20);
 
         // Act
         Double discountedPrice = product.getPriceWithDiscountApplied();
@@ -167,7 +155,7 @@ class ProductTest {
     @Test
     void getPriceWithDiscountApplied_WithZeroDiscount_ShouldReturnOriginalPrice() {
         // Arrange
-        Product product = createTestProduct("TEST-123", 100.0, 0);
+        Product product = createTestProduct(0);
 
         // Act
         Double result = product.getPriceWithDiscountApplied();
@@ -202,75 +190,5 @@ class ProductTest {
 
         // Assert
         assertNull(result);
-    }
-
-    @Test
-    void addComment_ShouldAddCommentToCollection() {
-        // Arrange
-        Product product = new Product();
-        User user = createTestUser("Test", "User");
-        Commentary comment = new Commentary(user, product, "Great product!");
-
-        // Act
-        product.addComment(comment);
-
-        // Assert
-        assertEquals(1, product.getCommentaries().size());
-        assertEquals("Great product!", product.getCommentaries().getFirst().getComment());
-        assertEquals(user, product.getCommentaries().getFirst().getUser());
-    }
-
-    @Test
-    void addReview_WithNewReview_ShouldAddToCollection() {
-        // Arrange
-        Product product = new Product();
-        User user = createTestUser("Test", "User");
-        Review review = new Review(product, user, 4, "Good product");
-
-        // Act
-        product.addReview(review);
-
-        // Assert
-        assertEquals(1, product.getReviews().size());
-        assertEquals(4, product.getReviews().getFirst().getRating());
-        assertEquals("Good product", product.getReviews().getFirst().getComment());
-    }
-
-    @Test
-    void addReview_WithExistingUserReview_ShouldReplaceOldReview() {
-        // Arrange
-        Product product = new Product();
-        User user = createTestUser("Test", "User");
-
-        Review firstReview = new Review(product, user, 4, "Good product");
-        product.addReview(firstReview);
-
-        Review updatedReview = new Review(product, user, 5, "Updated opinion: Excellent product");
-
-        // Act
-        product.addReview(updatedReview);
-
-        // Assert
-        assertEquals(1, product.getReviews().size());
-        assertEquals(5, product.getReviews().getFirst().getRating());
-        assertEquals("Updated opinion: Excellent product", product.getReviews().getFirst().getComment());
-    }
-
-    @Test
-    void addReview_FromDifferentUsers_ShouldAddMultipleReviews() {
-        // Arrange
-        Product product = new Product();
-        User firstUser = createTestUser("First", "User");
-        User secondUser = createTestUser("Second", "User");
-
-        Review firstReview = new Review(product, firstUser, 4, "Review from first user");
-        Review secondReview = new Review(product, secondUser, 5, "Review from second user");
-
-        // Act
-        product.addReview(firstReview);
-        product.addReview(secondReview);
-
-        // Assert
-        assertEquals(2, product.getReviews().size());
     }
 }

@@ -1,6 +1,6 @@
 package unq.pdes._5.g1.segui_tus_compras.model.dto.out.user;
 
-import unq.pdes._5.g1.segui_tus_compras.model.product.Commentary;
+import unq.pdes._5.g1.segui_tus_compras.model.product.Question;
 import unq.pdes._5.g1.segui_tus_compras.model.product.Product;
 import unq.pdes._5.g1.segui_tus_compras.model.product.Review;
 import unq.pdes._5.g1.segui_tus_compras.model.purchase.Purchase;
@@ -17,7 +17,7 @@ public class UserDto {
     public List<Purchase> purchases;
     public List<Review> reviews;
     public List<Product> favorites;
-    public List<Commentary> commentaries;
+    public List<Question> commentaries;
 
     public UserDto(User user) {
         this.id = user.getId();
@@ -27,7 +27,7 @@ public class UserDto {
         this.purchases = user.getPurchases();
         this.reviews = user.getReviews();
         this.favorites = user.getFavorites();
-        this.commentaries = user.getCommentaries();
+        this.commentaries = user.getQuestions();
         this.isAdmin = user.isAdmin();
     }
 }

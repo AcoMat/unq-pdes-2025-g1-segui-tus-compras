@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import unq.pdes._5.g1.segui_tus_compras.exception.auth.*;
+import unq.pdes._5.g1.segui_tus_compras.exception.external.InvalidApiTokenException;
 import unq.pdes._5.g1.segui_tus_compras.exception.product.ProductNotFoundException;
 import unq.pdes._5.g1.segui_tus_compras.exception.purchase.NotBoughtYetException;
 
@@ -83,6 +84,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedAccessException.class)
     public ResponseEntity<String> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidApiTokenException.class)
+    public ResponseEntity<String> handleInvalidApiTokenException(InvalidApiTokenException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
     }
 
     @ExceptionHandler(RuntimeException.class)

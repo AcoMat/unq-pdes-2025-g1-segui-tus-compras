@@ -17,13 +17,12 @@ const axiosService = axios.create({
 
 export async function register(firstName, lastName, email, password) {
   try {
-    const response = await axiosService.post('/auth/register', {
+    return await axiosService.post('/auth/register', {
       firstName,
       lastName,
       email,
       password,
     });
-    return response;
   }
   catch (error) {
     if (error.response) {
@@ -35,11 +34,10 @@ export async function register(firstName, lastName, email, password) {
 
 export async function login(email, password) {
   try {
-    const response = await axiosService.post('/auth/login', {
+    return await axiosService.post('/auth/login', {
       email,
       password,
     });
-    return response;
   }
   catch (error) {
     if (error.response) {
@@ -199,7 +197,7 @@ export async function searchProducts(q, offset = 0, limit = 10) {
     return response.data;
   } catch (error) {
     if (error.response) {
-      throw new Error('Error fetching products:', error.response.data);
+      throw new Error(error.response.data);
     }
     throw new Error('Error de conexión. Por favor, intente más tarde.');
   }

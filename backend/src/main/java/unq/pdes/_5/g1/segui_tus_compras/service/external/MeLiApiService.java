@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import unq.pdes._5.g1.segui_tus_compras.exception.external.ExternalApiException;
 import unq.pdes._5.g1.segui_tus_compras.exception.external.InvalidApiTokenException;
+import unq.pdes._5.g1.segui_tus_compras.exception.product.ProductNotFoundException;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.meli_api.ApiSearchDto;
 import unq.pdes._5.g1.segui_tus_compras.model.dto.in.meli_api.ExternalProductDto;
 import org.springframework.util.StringUtils;
@@ -43,7 +44,15 @@ public class MeLiApiService {
                 .buildAndExpand(productId)
                 .toUriString();
 
-        return executeRequest(uri, ExternalProductDto.class);
+        try {
+            return executeRequest(uri, ExternalProductDto.class);
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().value() == 404) {
+                logger.warn("Product not found in MercadoLibre API: {}", productId);
+                throw new ProductNotFoundException(productId);
+            }
+            throw handleHttpClientError(e);
+        }
     }
 
     public ApiSearchDto search(String keywords, Integer offset, Integer limit) {
@@ -55,28 +64,34 @@ public class MeLiApiService {
                 .queryParam("q", keywords)
                 .toUriString();
 
-        return executeRequest(uri, ApiSearchDto.class);
+        try {
+            return executeRequest(uri, ApiSearchDto.class);
+        } catch (HttpClientErrorException e) {
+            throw handleHttpClientError(e);
+        }
     }
 
     private <T> T executeRequest(String uri, Class<T> responseType) {
-        try {
-            ResponseEntity<T> response = restClient.get()
-                    .uri(uri)
-                    .header("Authorization", "Bearer " + apiToken)
-                    .retrieve()
-                    .toEntity(responseType);
+        ResponseEntity<T> response = restClient.get()
+                .uri(uri)
+                .header("Authorization", "Bearer " + apiToken)
+                .retrieve()
+                .toEntity(responseType);
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return response.getBody();
-            } else {
-                throw new ExternalApiException("Unexpected status code: " + response.getStatusCode().value());
-            }
-        } catch (HttpClientErrorException e) {
-            if (e.getStatusCode().value() == 401) {
-                logger.error("Invalid API token for MercadoLibre API. Please check the configured token.");
-                throw new InvalidApiTokenException("Invalid API token for MercadoLibre API. Please check the configured token.");
-            }
-            throw new ExternalApiException("Error calling MercadoLibre API: " + e.getMessage());
+        if (response.getStatusCode().is2xxSuccessful()) {
+            return response.getBody();
+        } else {
+            throw new ExternalApiException("Unexpected status code: " + response.getStatusCode().value());
         }
+    }
+
+    private RuntimeException handleHttpClientError(HttpClientErrorException e) {
+        if (e.getStatusCode().value() == 401) {
+            logger.error("Invalid API token for MercadoLibre API. Please check the configured token.");
+            return new InvalidApiTokenException("Invalid API token for MercadoLibre API. Please check the configured token.");
+        } else if (e.getStatusCode().value() == 400) {
+            return new IllegalArgumentException("Bad request to MercadoLibre API: Invalid parameter");
+        }
+        return new ExternalApiException("Error calling MercadoLibre API: " + e.getStatusCode() + " - " + e.getMessage());
     }
 }

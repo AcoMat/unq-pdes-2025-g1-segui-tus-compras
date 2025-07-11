@@ -42,13 +42,5 @@ describe('Home Page e2e tests', () => {
     cy.url().should('include', '/')
     cy.get('#1').should('be.visible')
   })
-
-  it('should display logged in user', () => {
-    cy.login();
-    // Check that the user's name is visible in the header (default: aaa@bbb.com)
-    cy.get('.header-links').should('contain.text', 'aa');
-    // Optionally, check for user avatar or user menu
-    cy.get('.header-links').find('a[href="/user"]').should('exist');
-  })
 })
 

@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useCartContext } from "../../context/CartContext";
 import { useState } from "react";
-import UpsForm from "../../components/forms/UpsForm";
-import PurchaseSumary from "./components/PurchaseSumary";
-import ChoosePaymentStage from "./components/ChoosePaymentStage";
 import checklist from "../../assets/ui/check-list.svg";
+import PurchaseSumary from "../../components/purchase/PurchaseSumary";
+import ChoosePaymentStage from "../../components/purchase/ChoosePaymentStage";
+import UpsForm from "../../components/forms/UpsForm.jsx";
 
 export default function Checkout() {
     let navigate = useNavigate();
@@ -51,8 +51,8 @@ export default function Checkout() {
                 </div>
                 || currentStage === formStages.purchasing &&
                 <div className='w-50 p-5 bg-body rounded mx-auto d-flex justify-content-center flex-column gap-4 text-center my-4'>
-                    <div class="spinner-border text-primary mx-auto" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                    <div className="spinner-border text-primary mx-auto" role="status">
+                        <span className="visually-hidden">Loading...</span>
                     </div>
                     <h4>Procesando tus datos...</h4>
                 </div>

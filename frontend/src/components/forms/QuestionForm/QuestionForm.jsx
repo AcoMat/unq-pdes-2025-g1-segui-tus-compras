@@ -5,15 +5,19 @@ function QuestionForm({ addQuestion }) {
     const form = useRef(null);
 
     const handleSendQuestion = () => {
-        if (form.current.value.trim() !== "") {
-            addQuestion(form.current.value);
-            form.current.value = "";
+        if (form.current.value.trim() == "") {
+            form.current.focus();
+            alert("Por favor, ingrese una pregunta.");
+            return;
         }
+        addQuestion(form.current.value);
+        form.current.value = "";
     }
 
     return (
         <div className="d-flex flex-column flex-sm-row gap-3 mb-4">
             <textarea
+                name="question"
                 ref={form}
                 className="rounded"
                 rows="1"

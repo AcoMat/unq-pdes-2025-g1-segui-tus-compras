@@ -15,7 +15,9 @@ function Home() {
                         <AdminDashboard />
                     ) : (
                         <>
-                            <HomeCarousel id={"1"} />
+                            <div data-cy="home-carousel">
+                                <HomeCarousel id={"1"} />
+                            </div>
                         </>
                     )
                 }

@@ -18,7 +18,7 @@ export default function useSearch(query) {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching search results:", error);
+        console.error(error);
         setSearchResults(null);
         setLoading(false);
       });

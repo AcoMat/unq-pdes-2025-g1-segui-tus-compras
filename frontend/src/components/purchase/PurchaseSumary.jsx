@@ -1,4 +1,4 @@
-import { formatARS } from '../../../util/priceUtil';
+import { formatARS } from '../../util/priceUtil';
 import './PurchaseSumary.css';
 
 function PurchaseSumary({ cartItems }) {

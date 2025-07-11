@@ -43,19 +43,16 @@ public class PurchaseService {
         User user = userService.getUserById(userId);
         List<PurchaseItem> items = dtoItems
                 .stream().map(p -> new PurchaseItem(
-                                productService.getProductById(p.productId),
-                                p.amount
+                                productService.getProductById(p.getProductId()),
+                                p.getAmount()
                         )
                 ).collect(Collectors.toList());
-        user.addPurchase(new Purchase(user, items));
-        userService.updateUser(user);
+        Purchase purchase = new Purchase(user, items);
+        purchaseRepository.save(purchase);
     }
 
     public boolean userBoughtProduct(Long userId, String productId) {
-        User user = userService.getUserById(userId);
-        return user.getPurchases().stream()
-                .anyMatch(purchase -> purchase.getItems().stream()
-                        .anyMatch(item -> item.getProduct().getId().equals(productId)));
+        return purchaseRepository.hasUserBoughtProduct(userId, productId);
     }
 
     public List<TopPurchasedProductDto> getTopPurchasedProducts() {

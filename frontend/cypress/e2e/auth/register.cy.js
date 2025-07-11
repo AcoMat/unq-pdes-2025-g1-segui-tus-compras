@@ -1,9 +1,11 @@
 describe('Register page e2e tests', () => {
-    const uniqueEmail = `testuser_${Date.now()}@mail.com`;
-    const usedEmail = 'aaa@bbb.com'; // Debe existir en la base de datos para este test
+    const uniqueEmail = `testuser${Date.now()}@mail.com`;
+    const uniqueEmail2 = `testuser${Date.now()}2@mail.com`;
 
     beforeEach(() => {
         cy.visit('/register');
+        cy.intercept('POST', '/auth/register').as('registerRequest');
+        cy.intercept('POST', '/auth/login').as('loginRequest');
     });
 
     it('Realiza un registro exitoso', () => {
@@ -19,15 +21,13 @@ describe('Register page e2e tests', () => {
         cy.get('input[name="password"]').type('Password123!');
         cy.get('input[name="confirmPassword"]').type('Password123!');
         cy.contains('Continuar').click();
-        // Paso 4: Imagen (ignorar, solo continuar)
-        cy.contains('Continuar').click();
         // Debe mostrar mensaje de éxito
-        cy.contains('¡Listo Juan! Ya tenés tu cuenta').should('be.visible');
+        cy.wait('@registerRequest').its('response.statusCode').should('eq', 200);
     });
 
     it('No permite registrar con un email ya usado', () => {
         // Paso 1: Email
-        cy.get('input[name="email"]').type(usedEmail);
+        cy.get('input[name="email"]').type(uniqueEmail2);
         cy.get('input[type="checkbox"]').check();
         cy.contains('Continuar').click();
         // Paso 2: Nombre y Apellido
@@ -38,11 +38,25 @@ describe('Register page e2e tests', () => {
         cy.get('input[name="password"]').type('Password123!');
         cy.get('input[name="confirmPassword"]').type('Password123!');
         cy.contains('Continuar').click();
-        // Paso 4: Imagen (ignorar, solo continuar)
+        cy.wait('@registerRequest').its('response.statusCode').should('eq', 200);
+        // Se creo la cuenta
+        cy.visit("/register")
+        cy.contains('button', 'Cerrar sesión').click();
+        cy.visit("/register")
+        // Vuelvo a registrar con mismo email
+        cy.get('input[name="email"]').type(uniqueEmail2);
+        cy.get('input[type="checkbox"]').check();
         cy.contains('Continuar').click();
-        // Debe mostrar mensaje de error
+        // Paso 2: Nombre y Apellido
+        cy.get('input[name="name"]').type('Pedro');
+        cy.get('input[name="lastName"]').type('Gómez');
+        cy.contains('Continuar').click();
+        // Paso 3: Contraseña
+        cy.get('input[name="password"]').type('Password123!');
+        cy.get('input[name="confirmPassword"]').type('Password123!');
+        cy.contains('Continuar').click();
+        cy.wait('@registerRequest').its('response.statusCode').should('eq', 400);
         cy.contains('Ups').should('be.visible');
-        cy.contains('email').should('exist');
     });
 
     it('Valida los campos del formulario de email', () => {
@@ -66,16 +80,15 @@ describe('Register page e2e tests', () => {
         // Nombre y Apellido vacío
         cy.get('input[name="name"]').clear();
         cy.contains('Continuar').click();
-        cy.contains('Por favor, ingrese un nombre').should('be.visible');
-        // Nombre pero no Apellido seria valido
+        cy.contains('Por favor, ingrese un nombre y apellido').should('be.visible');
+        // Nombre pero no Apellido
         cy.get('input[name="name"]').type('Juan');
         cy.get('input[name="lastName"]').clear();
         cy.contains('Continuar').click();
-        cy.contains('Crea una contraseña').should('be.visible');
+        cy.contains('Por favor, ingrese un nombre y apellido').should('be.visible');
     });
 
     it('Valida los campos del formulario de contraseña', () => {
-        cy.intercept('POST', '/auth/register').as('registerRequest');
         // Paso 1: Email válido
         cy.get('input[name="email"]').type(uniqueEmail);
         cy.get('input[type="checkbox"]').check();
@@ -99,7 +112,6 @@ describe('Register page e2e tests', () => {
         // Continuar con contraseña invalida
         cy.get('input[name="confirmPassword"]').clear();
         cy.get('input[name="confirmPassword"]').type('123');
-        cy.contains('Continuar').click();
         cy.contains('Continuar').click();
         // Cargando
         cy.wait('@registerRequest').its('response.statusCode').should('eq', 400);

@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import EmailStep from './EmailStep.jsx';
 import NameStep from './NameStep.jsx';
 import PasswordStep from './PasswordStep.jsx';
-import ImageStep from './ImageStep.jsx';
 import { useUserContext } from '../../../context/UserContext.jsx';
 import UpsForm from '../UpsForm.jsx';
 
@@ -26,7 +25,6 @@ function RegisterForm() {
         email: 'email',
         password: 'password',
         name: 'name',
-        imageurl: 'imageurl',
         creating: 'creating',
         created: 'created',
         error: 'error'
@@ -49,6 +47,15 @@ function RegisterForm() {
 
 
     const [currentStage, setCurrentStage] = useState(registerStages.email);
+    const [shouldRegister, setShouldRegister] = useState(false);
+    
+    useEffect(() => {
+        if (shouldRegister && currentStage === registerStages.creating) {
+            registerUser();
+            setShouldRegister(false);
+        }
+    }, [shouldRegister, currentStage, formData]);
+    
     const nextStage = async () => {
         switch (currentStage) {
             case registerStages.email:
@@ -59,7 +66,7 @@ function RegisterForm() {
                 break;
             case registerStages.password:
                 setCurrentStage(registerStages.creating);
-                registerUser();
+                setShouldRegister(true);
                 break;
             default:
                 setCurrentStage(registerStages.email);
@@ -76,8 +83,6 @@ function RegisterForm() {
                 <NameStep setFormData={setFormData} nextStage={nextStage} />
                 || currentStage === registerStages.password &&
                 <PasswordStep setFormData={setFormData} nextStage={nextStage} />
-                || currentStage === registerStages.imageurl &&
-                <ImageStep setFormData={setFormData} nextStage={nextStage} />
                 || currentStage === registerStages.creating &&
                 <div className='w-50 p-5 bg-body rounded mx-auto d-flex justify-content-center flex-column gap-4 text-center'>
                     <img className='mx-auto w-25 ml-blue-filter' src={loadingsvg} />

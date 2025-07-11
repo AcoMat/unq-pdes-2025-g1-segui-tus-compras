@@ -40,8 +40,8 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            acomat/segui-tus-compras:backend-${{ github.ref_name }}
-            acomat/segui-tus-compras:backend-latest
+            acomat/segui-tus-compras-backend:${{ github.ref_name }}
+            acomat/segui-tus-compras-backend:latest
 
   build-and-push-frontend:
     runs-on: ubuntu-latest
@@ -65,7 +65,5 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            acomat/segui-tus-compras:frontend-${{ github.ref_name }}
-            acomat/segui-tus-compras:frontend-latest
-          build-args: |
-            VITE_BACKEND_URL=http://localhost:18080
+            acomat/segui-tus-compras-frontend:${{ github.ref_name }}
+            acomat/segui-tus-compras-frontend:latest
